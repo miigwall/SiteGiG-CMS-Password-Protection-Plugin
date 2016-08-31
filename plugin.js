@@ -2,14 +2,16 @@
  * SiteGiG CMS Example Plugin
  */
 
-sitegig.controller("examplePluginCtrl", function($scope, $cookies, $http) {
+sitegig.controller("passwordprotectPluginCtrl", [ '$scope', '$cookies', '$http', function($scope, $cookies, $http) {
 
-	$scope.name = 'example';
-	$scope.fullname = 'Example Plugin';
+	$scope.name = 'passwordprotect';
+	$scope.fullname = 'Password Protection';
 	$scope.version = '1.0.0';
 	$scope.author = 'Kylma.la';
-	$scope.description = 'Shows how SiteGiG CMS plugin system works';
+	$scope.description = 'Protect your site using password';
 	$scope.has_plugin_page = true;
+	$scope.plgdata = {};
+	$scope.saved = false;
 
 	// Init plugin
 	$scope.init = function() {
@@ -18,7 +20,13 @@ sitegig.controller("examplePluginCtrl", function($scope, $cookies, $http) {
 
 	// Init plugin page when user opens this plugin
 	$scope.initPage = function() {
-		angular.element(document).find('body').eq(0).append(angular.element('<link rel="stylesheet" type="text/css" href="plugins/' + $scope.name + '/styles/' + $scope.name + '.css" />'));
+		
+		console.log('plugin ' + $scope.name + ' page initialized');
+	
+		$scope.getPassword(function(data) {
+			$scope.plgdata.password = data.value;
+		});
+
 	};
 
 	// Init plugin page
@@ -26,4 +34,36 @@ sitegig.controller("examplePluginCtrl", function($scope, $cookies, $http) {
 		return 'plugins/' + $scope.name + '/templates/' + $scope.name + '.html';
 	};
 
-});
+	// Make an api request
+	$scope.apiReq = function(endpoint, data, callback) {
+
+		$http({
+		    method: 'POST',
+		    url: endpoint,
+		    data: data,
+		    headers: { 'Content-Type' : 'application/json' }
+		}).then(function responseCallback(response) {
+			callback(response.data);
+		});
+
+	};
+
+	// Get password
+	$scope.getPassword = function(callback) {
+		
+		$scope.apiReq('/rest/get/settings', { 'setting_name' : $scope.name + '_pw' }, function(data) {
+			callback(data);
+		});
+
+	};
+
+	// Set password
+	$scope.setPassword = function() {
+
+		$scope.apiReq('/rest/set/settings', { 'setting_name' : $scope.name + '_pw', 'setting_value' : $scope.plgdata.password }, function(data) {
+			$scope.saved = true;
+		});
+
+	};
+
+}]);
